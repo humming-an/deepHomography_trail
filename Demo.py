@@ -30,6 +30,12 @@ def randomCreatePatch(image, position, patchSize, pValue):
     '''
     patchImage = image[position[1]: position[1] + patchSize, position[0]:position[0] + patchSize]
     H = np.random.randint(-pValue, pValue, size=(4, 2))
+    H = np.random.randint(-pValue, pValue, size=(4, 2))*0
+    #H = np.zeros(shape=(4,2))
+    #H[0] = [16,0]
+    #H[1] = [16,0]
+    #H[2] = [16,0]
+    #H[3] = [16,0]
     p = np.array([
         position
         , [position[0] + patchSize, position[1]]
@@ -67,8 +73,8 @@ def preprocessing(imgUrl, patchSize=128, pValue=32):
     img = np.array(cv2.imread(imgUrl, flags=cv2.IMREAD_GRAYSCALE), dtype=np.float)
         
     height, width = img.shape
-    x = np.random.randint(low=pValue, high=width - pValue - patchSize)
-    y = np.random.randint(low=pValue, high=height - pValue - patchSize)
+    x = width//3 #np.random.randint(low=pValue, high=width - pValue - patchSize)
+    y = int(1.8*height//3) #np.random.randint(low=pValue, high=height - pValue - patchSize)
     pos = np.array([x, y], dtype=np.int)
     source, dst, H, H_AB, _, p, perturbedP = randomCreatePatch(img, pos, patchSize=patchSize, pValue=pValue)
     H, H_AB = np.array(H).flatten(), np.array(H_AB).flatten()
@@ -204,6 +210,9 @@ def main():
     use_cuda = torch.cuda.is_available()
     device = torch.device(args.deviceID if use_cuda else "cpu")
     resultModelFile = "pretrained_model"
+    
+    #image = 'example_1/example.jpg'
+    image = 'my_sample_input.png'
 
 
     # -----------------------------------------------------
@@ -213,11 +222,15 @@ def main():
         model.cuda()
     if os.path.isfile(resultModelFile):
         try:
-            model.load_state_dict(torch.load(resultModelFile))
+            if device.type == 'cpu':
+                model.load_state_dict(torch.load(resultModelFile, map_location=torch.device('cpu')))
+            else:
+                model.load_state_dict(torch.load(resultModelFile))
         except:
             print("Cannot load the saved model")
 
-    demo(model, device, args.image)
+    #demo(model, device, args.image)
+    demo(model, device, image)
 
 if __name__ == "__main__":
     main()
